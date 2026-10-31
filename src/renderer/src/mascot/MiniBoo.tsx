@@ -18,7 +18,7 @@ function lookToward(dx: number, dy: number): Look {
   return { x: Math.round(clamp(dx / 140) * 3), y: Math.round(clamp(dy / 90) * 2) }
 }
 
-export function MiniBoo({ catching = false, height = 22 }: { catching?: boolean; height?: number }): JSX.Element {
+export function MiniBoo({ catching = false, height = 34 }: { catching?: boolean; height?: number }): JSX.Element {
   const id = `mini${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const [look, setLook] = useState<Look | null>(null)
   const [waving, setWaving] = useState(false)
