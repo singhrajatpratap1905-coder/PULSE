@@ -6,6 +6,10 @@ export const PANEL = { width: 760, height: 430, radius: 24 }
 // The collapsed notch widens to this while showing an activity.
 export const ACTIVITY = { width: 340, height: 38, radius: 18 }
 
+// Boo's tiny home: the idle notch when "Boo lives in the notch" is on. Kept small so it
+// doesn't cover tabs or title bars.
+export const TINY = { width: 64, height: 26, radius: 13 }
+
 // Taller, for activities where Boo the mascot acts out a scene.
 export const SCENE = { width: 410, height: 64, radius: 26 }
 

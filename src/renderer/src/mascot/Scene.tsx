@@ -4,19 +4,31 @@ import { api } from '../api'
 import './mascot.css'
 
 // The id prefix of the drawing being rendered, for its gradient references.
-const DrawingId = createContext('boo')
+export const DrawingId = createContext('boo')
+
+/** Where Boo is looking, as a small offset of the eyes (in drawing units, about ±3). */
+export interface Look {
+  x: number
+  y: number
+}
 
 // Boo, Pulse's ghost mascot, drawn as smooth SVG and animated with CSS (see mascot.css).
 // Boo's own drawing spans x 0–100, y 0–110; props sit to its right.
 
-/** Whether an activity should be shown as a mascot scene under the user's settings. */
+/** Whether an activity should be shown as a full-size mascot scene under the user's settings. */
 export function showsScene(activity: Activity | null, prefs: MascotPrefs | null): boolean {
-  if (!activity?.scene || !prefs?.enabled) return false
+  // The catch scene only exists in the tiny notch (see MiniBoo).
+  if (!activity?.scene || activity.scene === 'catch' || !prefs?.enabled) return false
   return activity.moment ? prefs.moments[activity.moment] : true
 }
 
-type Expression = 'open' | 'happy' | 'sleepy'
-type Arms = 'rest' | 'wave' | 'type' | 'hold'
+/** Whether Boo lives in a tiny notch when Pulse is idle. */
+export const tinyNotch = (prefs: MascotPrefs | null): boolean => !!prefs?.enabled && prefs.notch !== false
+
+type FullScene = Exclude<MascotScene, 'catch'>
+
+export type Expression = 'open' | 'happy' | 'sleepy'
+export type Arms = 'rest' | 'wave' | 'type' | 'hold'
 
 const INK = '#1c1917'
 
@@ -24,7 +36,7 @@ const INK = '#1c1917'
 const BODY_PATH =
   'M12,44 A38,38 0 0 1 88,44 L88,98 Q75.3,84 62.7,98 Q50,84 37.3,98 Q24.7,84 12,98 Z'
 
-function Eyes({ expression }: { expression: Expression }): JSX.Element {
+function Eyes({ expression, look }: { expression: Expression; look?: Look }): JSX.Element {
   if (expression === 'happy') {
     return (
       <g fill="none" stroke={INK} strokeWidth={3.6} strokeLinecap="round">
@@ -42,11 +54,14 @@ function Eyes({ expression }: { expression: Expression }): JSX.Element {
     )
   }
   return (
-    <g className="boo-eyes">
-      <ellipse cx={37} cy={47} rx={6.5} ry={9.5} fill={INK} />
-      <ellipse cx={63} cy={47} rx={6.5} ry={9.5} fill={INK} />
-      <circle cx={38.6} cy={43.2} r={2.1} fill="#fff" />
-      <circle cx={64.6} cy={43.2} r={2.1} fill="#fff" />
+    // Looking is an SVG transform on an outer group, so it never fights the blink animation.
+    <g transform={look ? `translate(${look.x} ${look.y})` : undefined}>
+      <g className="boo-eyes">
+        <ellipse cx={37} cy={47} rx={6.5} ry={9.5} fill={INK} />
+        <ellipse cx={63} cy={47} rx={6.5} ry={9.5} fill={INK} />
+        <circle cx={38.6} cy={43.2} r={2.1} fill="#fff" />
+        <circle cx={64.6} cy={43.2} r={2.1} fill="#fff" />
+      </g>
     </g>
   )
 }
@@ -58,16 +73,28 @@ function Mouth({ expression }: { expression: Expression }): JSX.Element {
 }
 
 /** Boo itself. Arms are small rounded nubs on each side; a soft halo sits behind. */
-function Boo({ expression, arms, className = '' }: { expression: Expression; arms: Arms; className?: string }): JSX.Element {
+export function Boo({
+  expression,
+  arms,
+  className = '',
+  look,
+  halo = true
+}: {
+  expression: Expression
+  arms: Arms
+  className?: string
+  look?: Look
+  halo?: boolean
+}): JSX.Element {
   const id = useContext(DrawingId)
   const fill = `url(#${id}-fill)`
   return (
     <g className={`boo ${className}`}>
-      <ellipse cx={50} cy={64} rx={60} ry={58} fill={`url(#${id}-glow)`} />
+      {halo && <ellipse cx={50} cy={64} rx={60} ry={58} fill={`url(#${id}-glow)`} />}
       <ellipse className={`boo-arm boo-arm-left arms-${arms}`} cx={11} cy={68} rx={6} ry={8} fill={fill} />
       <ellipse className={`boo-arm boo-arm-right arms-${arms}`} cx={89} cy={68} rx={6} ry={8} fill={fill} />
       <path d={BODY_PATH} fill={fill} />
-      <Eyes expression={expression} />
+      <Eyes expression={expression} look={look} />
       <ellipse cx={25} cy={60} rx={5.5} ry={3} fill="#fb7185" opacity={0.85} />
       <ellipse cx={75} cy={60} rx={5.5} ry={3} fill="#fb7185" opacity={0.85} />
       <Mouth expression={expression} />
@@ -77,7 +104,7 @@ function Boo({ expression, arms, className = '' }: { expression: Expression; arm
 
 // Gradient ids must be unique per drawing: with several Boos on screen at once (Settings and
 // the notch), a shared id can resolve to a copy that's being removed, leaving Boo unpainted.
-function Defs({ id }: { id: string }): JSX.Element {
+export function Defs({ id }: { id: string }): JSX.Element {
   return (
     <defs>
       <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
@@ -145,7 +172,7 @@ function Zs(): JSX.Element {
 }
 
 // How each scene looks: Boo's pose, props, and the drawing's width.
-const SCENES: Record<MascotScene, { width: number; draw: () => JSX.Element }> = {
+const SCENES: Record<FullScene, { width: number; draw: () => JSX.Element }> = {
   wave: {
     width: 112,
     draw: () => <Boo expression="open" arms="wave" className="float" />
@@ -191,7 +218,7 @@ const SCENES: Record<MascotScene, { width: number; draw: () => JSX.Element }> = 
 }
 
 /** Boo acting out a scene, `height` px tall. */
-export function SceneArt({ scene, height = 54 }: { scene: MascotScene; height?: number }): JSX.Element {
+export function SceneArt({ scene, height = 54 }: { scene: FullScene; height?: number }): JSX.Element {
   const { width, draw } = SCENES[scene]
   // useId returns ":r1:"-style ids; colons aren't valid inside url(#...) references.
   const id = `boo${useId().replace(/[^a-zA-Z0-9]/g, '')}`

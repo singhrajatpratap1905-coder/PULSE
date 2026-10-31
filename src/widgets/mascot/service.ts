@@ -33,6 +33,7 @@ const PREVIEWS: Record<MascotScene, Omit<ActivityInput, 'scene'>> = {
   typing: { title: 'Focus time', detail: '25 min', moment: 'focus' },
   coffee: { title: 'Break time', detail: '5 min · nice work!', moment: 'focus' },
   celebrate: { title: 'Timer done', detail: 'Tea', moment: 'celebrations' },
+  catch: { title: 'Copied', detail: 'Text' },
   sleepy: { title: "It's getting late", detail: 'Maybe call it a night?', moment: 'bedtime' }
 }
 
@@ -40,7 +41,8 @@ export default defineService((ctx) => {
   let prefs = ctx.store.get<MascotPrefs>('prefs', {
     enabled: true,
     name: defaultName(),
-    moments: { greetings: true, focus: true, celebrations: true, bedtime: true }
+    moments: { greetings: true, focus: true, celebrations: true, bedtime: true },
+    notch: true
   })
 
   const greet = (part: DayPart): string => {

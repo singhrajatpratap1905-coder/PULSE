@@ -50,7 +50,9 @@ export default defineService((ctx) => {
     ctx.activity({
       title: 'Copied',
       detail: item.image ? `Image · ${item.image.width} × ${item.image.height}` : KIND_LABEL[item.kind],
-      key: 'copied'
+      key: 'copied',
+      // With Boo in the notch, Boo catches it instead of the text message.
+      scene: 'catch'
     })
   }
 

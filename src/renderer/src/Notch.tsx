@@ -1,12 +1,30 @@
 import { useEffect, useRef, type DragEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ACTIVITY, NOTCH, PANEL, SCENE } from '@shared/layout'
+import { ACTIVITY, NOTCH, PANEL, SCENE, TINY } from '@shared/layout'
 import { api } from './api'
 import { usePulse } from './store'
 import { Panel } from './Panel'
 import { ActivityView } from './ActivityView'
 import { registerNotchElement } from './drag'
-import { showsScene } from './mascot/Scene'
+import { showsScene, tinyNotch } from './mascot/Scene'
+import { MiniBoo } from './mascot/MiniBoo'
+
+// How long Boo holds a caught paper before the notch settles back.
+const CATCH_MS = 1700
+
+/** Boo catching a copied item in the tiny notch; ends that activity when done. */
+function CatchView(): JSX.Element {
+  const nextActivity = usePulse((s) => s.nextActivity)
+  useEffect(() => {
+    const timer = setTimeout(nextActivity, CATCH_MS)
+    return () => clearTimeout(timer)
+  }, [nextActivity])
+  return (
+    <motion.div className="tiny-home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.06 } }}>
+      <MiniBoo catching />
+    </motion.div>
+  )
+}
 import { WIDGETS } from './widgets/registry'
 
 // Where dropped files go: the open page if it takes files (e.g. Phone Drop), else the first
@@ -32,6 +50,9 @@ export function Notch(): JSX.Element {
   const expanded = usePulse((s) => s.expanded)
   const activity = usePulse((s) => s.activity)
   const scene = usePulse((s) => showsScene(s.activity, s.mascot))
+  const tiny = usePulse((s) => tinyNotch(s.mascot))
+  // With Boo in the notch, a copy is shown as Boo catching it rather than a "Copied" message.
+  const catching = tiny && activity?.scene === 'catch'
   const hoverTimer = useRef<number>()
   const leaveTimer = useRef<number>()
 
@@ -112,7 +133,15 @@ export function Notch(): JSX.Element {
     else open('click')
   }
 
-  const size = expanded ? PANEL : activity ? (scene ? SCENE : ACTIVITY) : NOTCH
+  const size = expanded
+    ? PANEL
+    : catching || (!activity && tiny)
+      ? TINY
+      : activity
+        ? scene
+          ? SCENE
+          : ACTIVITY
+        : NOTCH
 
   return (
     <motion.div
@@ -139,7 +168,19 @@ export function Notch(): JSX.Element {
       <span className="ear ear-right" />
       <div className="notch-clip">
         <AnimatePresence mode="wait">
-          {!expanded && activity && <ActivityView key={activity.id} activity={activity} />}
+          {!expanded && activity && !catching && <ActivityView key={activity.id} activity={activity} />}
+          {!expanded && catching && <CatchView key={activity!.id} />}
+          {!expanded && !activity && tiny && (
+            <motion.div
+              key="tiny"
+              className="tiny-home"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.15 } }}
+              exit={{ opacity: 0, transition: { duration: 0.06 } }}
+            >
+              <MiniBoo />
+            </motion.div>
+          )}
         </AnimatePresence>
         <AnimatePresence>
           {expanded && (

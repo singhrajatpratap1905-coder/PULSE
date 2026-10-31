@@ -186,6 +186,21 @@ function MascotSettings(): JSX.Element | null {
           <Switch on={prefs.enabled} onChange={(enabled) => save({ enabled })} />
         </div>
       </Row>
+      <Row
+        label="Boo lives in the notch"
+        hint="When you're not using Pulse, the notch shrinks to Boo's tiny home. Boo watches your pointer and catches what you copy."
+      >
+        <div className="st-actions">
+          <button className="btn btn-small st-preview" {...previewOn('catch')}>
+            <Play size={11} /> Preview
+          </button>
+          <Switch
+            on={prefs.notch !== false}
+            disabled={!prefs.enabled}
+            onChange={(notch) => save({ notch })}
+          />
+        </div>
+      </Row>
       <Row label="Your name" hint="Used in greetings; leave empty for just “Good morning!”">
         <input
           className="field st-name"

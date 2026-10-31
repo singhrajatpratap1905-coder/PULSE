@@ -40,13 +40,16 @@ export interface ActivityInput {
   moment?: MascotMoment
 }
 
-export type MascotScene = 'wave' | 'typing' | 'coffee' | 'celebrate' | 'sleepy'
+/** `catch` plays inside Boo's tiny notch (a copied item drifting into Boo's hands). */
+export type MascotScene = 'wave' | 'typing' | 'coffee' | 'celebrate' | 'sleepy' | 'catch'
 export type MascotMoment = 'greetings' | 'focus' | 'celebrations' | 'bedtime'
 
 export interface MascotPrefs {
   enabled: boolean
   name: string
   moments: Record<MascotMoment, boolean>
+  /** Shrink the idle notch to Boo's tiny home. Missing in older saved prefs: treat as on. */
+  notch?: boolean
 }
 
 export interface NotificationInput {

@@ -263,6 +263,15 @@ button {
   flex: none;
 }
 
+/* Boo's tiny home: the idle notch with Boo centred in it. */
+.tiny-home {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-top: 1px;
+}
+
 /* Boo on the left, the message beside it. */
 .activity.activity-scene {
   justify-content: flex-start;

@@ -35,7 +35,7 @@ export function ActivityView({ activity }: { activity: Activity }): JSX.Element 
       animate={{ opacity: 1, scale: 1, transition: { delay: 0.08, duration: 0.16 } }}
       exit={{ opacity: 0, transition: { duration: 0.08 } }}
     >
-      {scene && activity.scene ? (
+      {scene && activity.scene && activity.scene !== 'catch' ? (
         <>
           <SceneArt scene={activity.scene} />
           <span className="scene-text">

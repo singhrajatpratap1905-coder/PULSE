@@ -6,9 +6,42 @@
 .scene-art .mug,
 .scene-art .sparkle,
 .scene-art .z,
-.scene-art .steam {
+.scene-art .steam,
+.mini-boo .boo-arm,
+.mini-boo .paper {
   transform-box: fill-box;
   transform-origin: center;
+}
+
+/* ---------- Boo in the tiny notch: still unless something happens ---------- */
+
+.mini-boo {
+  overflow: visible;
+  display: block;
+}
+
+/* No blinking or floating here: a looping animation would redraw the window forever. */
+.mini-boo .boo-eyes {
+  animation: none;
+}
+
+.mini-boo .boo-arm-right.arms-hold {
+  transform: translate(-4px, -10px) rotate(-20deg);
+}
+
+.mini-boo .boo-arm-left.arms-hold {
+  transform: translate(10px, -6px);
+}
+
+.mini-boo .paper {
+  animation: paper-catch 0.8s cubic-bezier(0.25, 0.8, 0.4, 1) both;
+}
+
+@keyframes paper-catch {
+  0% { transform: translate(14px, -72px) rotate(35deg); opacity: 0; }
+  20% { opacity: 1; }
+  65% { transform: translate(-4px, 4px) rotate(-14deg); }
+  100% { transform: translate(0, 0) rotate(-8deg); }
 }
 
 /* No CSS filters here: in Pulse's transparent, always-on-top window they're the likeliest thing
