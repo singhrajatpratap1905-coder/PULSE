@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
 import { BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, Cpu, HardDrive, MemoryStick } from 'lucide-react'
-import { useWidgetValue } from '@renderer/widgets/sdk'
+import { useWidgetLive, useWidgetValue } from '@renderer/widgets/sdk'
 import { percentOf, type SystemStats } from './types'
+
+// How often stats refresh: the page is for watching; the Home card only needs a rough idea.
+export const PAGE_REFRESH_MS = 2000
+export const CARD_REFRESH_MS = 5000
 
 export const ID = 'system'
 
@@ -15,7 +19,9 @@ const INITIAL: SystemStats = {
   cores: 0
 }
 
-export function useStats(): SystemStats {
+/** Live stats while the calling component is on screen, refreshed every `refreshMs`. */
+export function useStats(refreshMs: number): SystemStats {
+  useWidgetLive(ID, refreshMs)
   return useWidgetValue(ID, 'getStats', 'stats', INITIAL)
 }
 
@@ -24,11 +30,24 @@ const gb = (bytes: number): string => (bytes / 1024 ** 3).toFixed(bytes >= 100 *
 /** Gray below 70%, amber to 90%, red above: busy machines should stand out. */
 const level = (pct: number): string => (pct >= 90 ? 'high' : pct >= 70 ? 'mid' : 'ok')
 
-export function Gauge({ pct, size, stroke, children }: { pct: number; size: number; stroke: number; children?: ReactNode }): JSX.Element {
+export function Gauge({
+  pct,
+  size,
+  stroke,
+  animate = true,
+  children
+}: {
+  pct: number
+  size: number
+  stroke: number
+  /** Smoothly sweep to new values. Off for small gauges: every redraw costs CPU. */
+  animate?: boolean
+  children?: ReactNode
+}): JSX.Element {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   return (
-    <div className={`sy-gauge ${level(pct)}`} style={{ width: size, height: size }}>
+    <div className={`sy-gauge ${level(pct)}${animate ? ' animated' : ''}`} style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`}>
         <circle className="sy-gauge-track" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} />
         <circle
@@ -54,7 +73,7 @@ function formatUptime(sec: number): string {
 }
 
 export function SystemPage(): JSX.Element {
-  const s = useStats()
+  const s = useStats(PAGE_REFRESH_MS)
   const mem = percentOf(s.memory)
   const disk = s.disk ? percentOf(s.disk) : 0
 

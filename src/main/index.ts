@@ -20,6 +20,10 @@ import { pulseVersion } from './version'
 
 app.setName('Pulse')
 app.setAppUserModelId(APP_USER_MODEL_ID)
+// Pulse draws one small window; the graphics process that hardware acceleration needs costs
+// 100–200 MB on its own, while software drawing measured about the same CPU. PULSE_GPU=on
+// brings it back, for comparing.
+if (process.env.PULSE_GPU !== 'on') app.disableHardwareAcceleration()
 // Development keeps its own data, so experiments never touch your real history and notes, and
 // `npm run dev` can run alongside the everyday copy.
 if (import.meta.env.DEV) app.setPath('userData', join(app.getPath('appData'), 'Pulse Dev'))

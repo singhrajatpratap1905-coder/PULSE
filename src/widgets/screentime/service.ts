@@ -1,11 +1,13 @@
 import { app, powerMonitor } from 'electron'
 import { basename } from 'path'
+import koffi from 'koffi'
 import { defineService } from '@shared/widget'
 import { friendlyAppName } from '@main/platform/apps'
 import { processPathOfWindow, win32 } from '@main/platform/win32'
+import { liveDemand } from '@main/widgets/live'
 import type { ScreenTimeState } from './types'
 
-const TICK_MS = 1000
+const TICK_MS = 2000
 // No keyboard or mouse input for this long counts as away.
 const IDLE_SEC = 120
 const KEEP_DAYS = 30
@@ -93,8 +95,7 @@ export default defineService((ctx) => {
     lastTick = now
 
     if (!paused && !locked && powerMonitor.getSystemIdleTime() < IDLE_SEC) {
-      const w = win32()
-      const path = w ? processPathOfWindow(w.GetForegroundWindow()) : null
+      const path = foregroundPath()
       const ownApp = path === process.execPath
       const key = path && (ownApp ? 'pulse' : basename(path).toLowerCase())
       if (path && key && !NOT_USE.has(key)) {
@@ -105,11 +106,30 @@ export default defineService((ctx) => {
     }
 
     if (now - lastSave >= SAVE_EVERY_MS) save()
-    if (now - lastEmit >= EMIT_EVERY_MS) {
+    // Only send fresh totals while the card or page is on screen.
+    if (demand.interval() !== null && now - lastEmit >= EMIT_EVERY_MS) {
       lastEmit = now
       ctx.emit('state', state())
     }
   }
+
+  // The window in front rarely changes between ticks; only look up its app when it does.
+  let lastHwnd: bigint | null = null
+  let lastPath: string | null = null
+  const foregroundPath = (): string | null => {
+    const w = win32()
+    if (!w) return null
+    const hwnd = w.GetForegroundWindow()
+    const address = hwnd ? koffi.address(hwnd) : null
+    if (address !== lastHwnd) {
+      lastHwnd = address
+      lastPath = hwnd ? processPathOfWindow(hwnd) : null
+    }
+    return lastPath
+  }
+
+  const demand = liveDemand()
+  ctx.handle('watch', (intervalMs: number) => demand.watch(intervalMs))
 
   const onLock = (): void => {
     locked = true

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { AppWindow, Pause, Play, Trash2 } from 'lucide-react'
-import { useWidget, useWidgetValue } from '@renderer/widgets/sdk'
+import { useWidget, useWidgetLive, useWidgetValue } from '@renderer/widgets/sdk'
 import { formatUsage, type AppUsage, type DayTotal, type ScreenTimeState } from './types'
 
 export const ID = 'screentime'
 
 const INITIAL: ScreenTimeState = { today: { date: '', seconds: 0, apps: [] }, week: [], paused: false }
 
+/** Today's totals, kept fresh while the calling component is on screen. */
 export function useScreenTime(): ScreenTimeState {
+  useWidgetLive(ID, 5000)
   return useWidgetValue(ID, 'getState', 'state', INITIAL)
 }
 

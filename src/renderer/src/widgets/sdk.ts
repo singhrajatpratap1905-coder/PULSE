@@ -53,3 +53,24 @@ export function useWidgetValue<T>(widgetId: string, getter: string, event: strin
   useWidgetEvent<T>(widgetId, event, setValue)
   return value
 }
+
+// How often a mounted component renews its claim on live updates; the service lets a claim lapse
+// a little after this, so updates stop soon after the component goes away (or the UI reloads).
+const LIVE_RENEW_MS = 4000
+
+/**
+ * Asks a widget's service for live updates every `intervalMs` while this component is on screen
+ * (the service handles a `watch(intervalMs)` call). Services only do their frequent work while
+ * someone is watching, which keeps Pulse light when the panel is closed.
+ */
+export function useWidgetLive(widgetId: string, intervalMs: number): void {
+  const { call } = useWidget(widgetId)
+  useEffect(() => {
+    const renew = (): void => {
+      call('watch', intervalMs).catch(() => {})
+    }
+    renew()
+    const timer = setInterval(renew, LIVE_RENEW_MS)
+    return () => clearInterval(timer)
+  }, [call, intervalMs])
+}

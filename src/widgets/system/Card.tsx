@@ -1,9 +1,9 @@
-import { Gauge, useStats } from './Page'
+import { CARD_REFRESH_MS, Gauge, useStats } from './Page'
 import { percentOf } from './types'
 
 /** Home tile: CPU, RAM and disk at a glance. */
 export function SystemCard(): JSX.Element {
-  const s = useStats()
+  const s = useStats(CARD_REFRESH_MS)
   const items: Array<[string, number]> = [
     ['CPU', s.cpu],
     ['RAM', percentOf(s.memory)],
@@ -13,7 +13,7 @@ export function SystemCard(): JSX.Element {
     <div className="sy-card">
       {items.map(([label, pct]) => (
         <div key={label} className="sy-card-item">
-          <Gauge pct={pct} size={48} stroke={4}>
+          <Gauge pct={pct} size={48} stroke={4} animate={false}>
             <span className="sy-card-pct">{Math.round(pct)}%</span>
           </Gauge>
           <span className="muted small">{label}</span>

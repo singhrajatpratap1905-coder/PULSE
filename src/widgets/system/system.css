@@ -59,7 +59,10 @@
 .sy-gauge-fill {
   stroke: var(--text);
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.6s ease;
+}
+
+.sy-gauge.animated .sy-gauge-fill {
+  transition: stroke-dashoffset 0.3s ease-out;
 }
 
 .sy-gauge.mid .sy-gauge-fill {
