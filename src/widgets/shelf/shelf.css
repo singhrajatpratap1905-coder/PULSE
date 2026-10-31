@@ -1,0 +1,254 @@
+.sh {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 10px;
+  min-height: 0;
+  outline: none;
+}
+
+.sh-shelves,
+.sh-main {
+  min-height: 0;
+  background: var(--surface);
+  border-radius: 16px;
+}
+
+/* ---------- Shelves ---------- */
+
+.sh-shelves {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 6px;
+  overflow-y: auto;
+}
+
+.sh-shelves-label {
+  padding: 0 8px 6px;
+}
+
+.sh-shelf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 4px 0 10px;
+  border-radius: 9px;
+  cursor: default;
+}
+
+.sh-shelf:hover {
+  background: var(--surface-hover);
+}
+
+.sh-shelf.active {
+  background: #242424;
+}
+
+.sh-shelf-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sh-shelf-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sh-shelf-delete {
+  visibility: hidden;
+}
+
+.sh-shelf:hover .sh-shelf-delete,
+.sh-shelf-delete.danger {
+  visibility: visible;
+}
+
+.sh-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sh-new:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.sh-name-input {
+  height: 30px;
+  margin: 0 2px;
+}
+
+/* ---------- Main ---------- */
+
+.sh-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sh-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px 6px 14px;
+}
+
+.sh-head-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sh-head-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sh-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sh-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-auto-rows: max-content;
+  gap: 4px;
+  padding: 4px 10px 8px;
+}
+
+.sh-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.sh-tile:hover {
+  background: var(--surface-hover);
+}
+
+.sh-tile.selected {
+  background: #262626;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.sh-tile.missing {
+  opacity: 0.45;
+}
+
+.sh-tile-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  visibility: hidden;
+}
+
+.sh-tile:hover .sh-tile-actions {
+  visibility: visible;
+}
+
+.sh-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex: none;
+}
+
+.sh-icon-fallback {
+  color: var(--muted);
+}
+
+.sh-tile-name {
+  max-width: 100%;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sh-tile-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.sh-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 12px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sh-foot {
+  flex: none;
+  padding: 6px 14px 10px;
+}
+
+/* Shown while files from another app hover over the notch. */
+.sh-drop {
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  background: rgba(10, 10, 10, 0.88);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* ---------- Home card ---------- */
+
+.sh-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sh-card-icons {
+  display: flex;
+  gap: 6px;
+}
+
+.sh-card-icons .sh-icon {
+  width: 30px;
+  height: 30px;
+}

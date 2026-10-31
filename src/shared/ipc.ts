@@ -1,0 +1,21 @@
+export const IPC = {
+  ready: 'pulse:ready',
+  setInteractive: 'pulse:set-interactive',
+  setExpanded: 'pulse:set-expanded',
+  getSettings: 'pulse:get-settings',
+  updateSettings: 'pulse:update-settings',
+  getAppInfo: 'pulse:get-app-info',
+  setStartWithWindows: 'pulse:set-start-with-windows',
+  suspendShortcut: 'pulse:suspend-shortcut',
+  openDataFolder: 'pulse:open-data-folder',
+  quit: 'pulse:quit',
+  getCursor: 'pulse:get-cursor',
+  toggle: 'pulse:toggle',
+  blur: 'pulse:blur',
+  settings: 'pulse:settings',
+  widgetCall: 'pulse:widget-call',
+  widgetEvent: 'pulse:widget-event',
+  widgetDrag: 'pulse:widget-drag',
+  activity: 'pulse:activity',
+  log: 'pulse:log'
+} as const

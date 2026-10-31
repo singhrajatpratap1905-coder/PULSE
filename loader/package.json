@@ -1,0 +1,7 @@
+{
+  "name": "pulse",
+  "productName": "Pulse",
+  "version": "1.0.0",
+  "description": "Starts the installed version of Pulse (see main.cjs).",
+  "main": "main.cjs"
+}

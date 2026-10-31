@@ -1,0 +1,50 @@
+# Builds Pulse on every push to main and publishes it as a GitHub release.
+# Installed copies of Pulse check for the latest release and update themselves.
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One release at a time, in push order.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      # The app bundle doesn't include Electron itself, so skip downloading it.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build and package
+        run: node scripts/bundle.mjs --build ${{ github.run_number }} --out release
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $manifest = Get-Content release/pulse-update.json | ConvertFrom-Json
+          $tag = "v$($manifest.version)"
+          gh release create $tag release/pulse-app.zip release/pulse-update.json `
+            --title "Pulse $($manifest.version)" `
+            --generate-notes `
+            --latest

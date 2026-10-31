@@ -1,0 +1,138 @@
+.fc {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 10px;
+  min-height: 0;
+}
+
+.fc-main,
+.fc-side {
+  min-height: 0;
+  background: var(--surface);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.fc-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.fc-ring {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.fc-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.fc-ring circle {
+  fill: none;
+  stroke-width: 6;
+}
+
+.fc-ring-track {
+  stroke: #262626;
+}
+
+.fc-ring-fill {
+  stroke: var(--text);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+.fc-ring.phase-break .fc-ring-fill {
+  stroke: #4ade80;
+}
+
+.fc-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.fc-clock {
+  font-size: 40px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.fc-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.fc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.fc-today {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fc-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fc-stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fc-stepper-value {
+  min-width: 52px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-hint {
+  margin: auto 0 0;
+}
+
+/* ---------- Home card ---------- */
+
+.fc-card {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.fc-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fc-card-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-hover);
+}
+
+.fc-card-btn:hover {
+  background: #2a2a2a;
+}
