@@ -137,7 +137,8 @@ const MOMENTS: Array<[MascotMoment, string, string, MascotScene]> = [
   ['greetings', 'Greetings', 'Good morning, afternoon and evening, once each', 'wave'],
   ['focus', 'Focus sessions', 'Typing when focus starts, coffee on breaks', 'typing'],
   ['celebrations', 'Celebrations', 'A happy jump when a timer finishes', 'celebrate'],
-  ['bedtime', 'Bedtime nudge', 'Once a night, if you are up after midnight', 'sleepy']
+  ['bedtime', 'Bedtime nudge', 'Once a night, if you are up after midnight', 'sleepy'],
+  ['music', 'Music', 'Headphones on while a song plays, and each new song shown briefly', 'music']
 ]
 
 function MascotSettings(): JSX.Element | null {

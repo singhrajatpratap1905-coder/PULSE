@@ -15,13 +15,14 @@ const CATCH_MS = 1700
 /** Boo catching a copied item in the tiny notch; ends that activity when done. */
 function CatchView(): JSX.Element {
   const nextActivity = usePulse((s) => s.nextActivity)
+  const vibing = usePulse((s) => s.vibing)
   useEffect(() => {
     const timer = setTimeout(nextActivity, CATCH_MS)
     return () => clearTimeout(timer)
   }, [nextActivity])
   return (
     <motion.div className="tiny-home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.06 } }}>
-      <MiniBoo catching />
+      <MiniBoo catching vibing={vibing} />
     </motion.div>
   )
 }
@@ -51,6 +52,7 @@ export function Notch(): JSX.Element {
   const activity = usePulse((s) => s.activity)
   const scene = usePulse((s) => showsScene(s.activity, s.mascot))
   const tiny = usePulse((s) => tinyNotch(s.mascot))
+  const vibing = usePulse((s) => s.vibing)
   // With Boo in the notch, a copy is shown as Boo catching it rather than a "Copied" message.
   const catching = tiny && activity?.scene === 'catch'
   const hoverTimer = useRef<number>()
@@ -178,7 +180,7 @@ export function Notch(): JSX.Element {
               animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.15 } }}
               exit={{ opacity: 0, transition: { duration: 0.06 } }}
             >
-              <MiniBoo />
+              <MiniBoo vibing={vibing} />
             </motion.div>
           )}
         </AnimatePresence>

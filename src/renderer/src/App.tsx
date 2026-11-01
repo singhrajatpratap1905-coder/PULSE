@@ -55,6 +55,9 @@ export function App(): JSX.Element {
       .call('mascot', 'getPrefs')
       .then(setMascot, (err) => api.log(`couldn't load mascot settings: ${err}`))
     const offMascot = api.widgets.on('mascot', 'prefs', setMascot)
+    const setVibing = (on: unknown): void => usePulse.setState({ vibing: !!on })
+    api.widgets.call('mascot', 'getVibing').then(setVibing, () => {})
+    const offVibing = api.widgets.on('mascot', 'vibing', setVibing)
     api.ready()
     // The UI came up: tells the updater this version works (see loader/main.cjs).
     api.widgets.call('updater', 'healthy').catch(() => {})
@@ -62,6 +65,7 @@ export function App(): JSX.Element {
     return () => {
       offActivity()
       offMascot()
+      offVibing()
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('blur', dropFocus)
       document.removeEventListener('pointerdown', trace, true)

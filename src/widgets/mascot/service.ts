@@ -1,6 +1,7 @@
 import { powerMonitor } from 'electron'
 import { userInfo } from 'os'
-import { defineService, type ActivityInput, type MascotPrefs, type MascotScene } from '@shared/widget'
+import { defineService, type ActivityInput, type MascotMoment, type MascotPrefs, type MascotScene } from '@shared/widget'
+import { nowPlaying } from '@main/platform/media'
 
 const CHECK_MS = 30_000
 // "At the PC" means some keyboard or mouse input within this long.
@@ -34,16 +35,72 @@ const PREVIEWS: Record<MascotScene, Omit<ActivityInput, 'scene'>> = {
   coffee: { title: 'Break time', detail: '5 min · nice work!', moment: 'focus' },
   celebrate: { title: 'Timer done', detail: 'Tea', moment: 'celebrations' },
   catch: { title: 'Copied', detail: 'Text' },
-  sleepy: { title: "It's getting late", detail: 'Maybe call it a night?', moment: 'bedtime' }
+  sleepy: { title: "It's getting late", detail: 'Maybe call it a night?', moment: 'bedtime' },
+  music: { title: 'Blinding Lights', detail: 'The Weeknd', moment: 'music' }
+}
+
+// How often to ask Windows what's playing. Cheap: a few COM calls.
+const MUSIC_POLL_MS = 2000
+const SONG_DURATION_MS = 4500
+
+const DEFAULT_MOMENTS: Record<MascotMoment, boolean> = {
+  greetings: true,
+  focus: true,
+  celebrations: true,
+  bedtime: true,
+  music: true
 }
 
 export default defineService((ctx) => {
-  let prefs = ctx.store.get<MascotPrefs>('prefs', {
+  const saved = ctx.store.get<MascotPrefs>('prefs', {
     enabled: true,
     name: defaultName(),
-    moments: { greetings: true, focus: true, celebrations: true, bedtime: true },
+    moments: DEFAULT_MOMENTS,
     notch: true
   })
+  // Moments added in later versions start out on.
+  let prefs: MascotPrefs = { ...saved, moments: { ...DEFAULT_MOMENTS, ...saved.moments } }
+
+  // Boo puts on headphones while music plays, and the notch shows each new song briefly.
+  let vibing = false
+  let lastSong = ''
+  let polling = false
+  let warned = false
+  const setVibing = (on: boolean): void => {
+    if (on === vibing) return
+    vibing = on
+    ctx.emit('vibing', on)
+  }
+  const pollMusic = async (): Promise<void> => {
+    if (polling) return
+    if (!prefs.enabled || !prefs.moments.music) return setVibing(false)
+    polling = true
+    try {
+      const now = await nowPlaying()
+      setVibing(!!now?.playing)
+      if (!now?.playing || !now.title) return
+      const song = `${now.title}\n${now.artist}`
+      if (song === lastSong) return
+      lastSong = song
+      ctx.activity({
+        title: now.title,
+        detail: now.artist || undefined,
+        scene: 'music',
+        moment: 'music',
+        key: 'music',
+        durationMs: SONG_DURATION_MS
+      })
+    } catch (err) {
+      // Said once: this runs every couple of seconds.
+      if (!warned) console.warn('[pulse] could not read what is playing:', err)
+      warned = true
+      setVibing(false)
+    } finally {
+      polling = false
+    }
+  }
+  const musicTimer = setInterval(pollMusic, MUSIC_POLL_MS)
+  ctx.handle('getVibing', () => vibing)
 
   const greet = (part: DayPart): string => {
     const name = prefs.name.trim()
@@ -110,6 +167,7 @@ export default defineService((ctx) => {
   return () => {
     clearTimeout(startTimer)
     clearInterval(timer)
+    clearInterval(musicTimer)
     powerMonitor.off('unlock-screen', onBack)
     powerMonitor.off('resume', onBack)
   }

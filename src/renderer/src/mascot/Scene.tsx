@@ -72,19 +72,47 @@ function Mouth({ expression }: { expression: Expression }): JSX.Element {
   return <ellipse cx={50} cy={60} rx={4} ry={3.2} fill={INK} />
 }
 
+/** Over-ear headphones, for when music plays: a band over Boo's head and a cup on each side. */
+function Headphones(): JSX.Element {
+  return (
+    <g className="headphones">
+      <path d="M9,54 A41,41 0 0 1 91,54" fill="none" stroke="#8b5cf6" strokeWidth={7} strokeLinecap="round" />
+      <rect x={1} y={40} width={17} height={27} rx={7.5} fill="#7c3aed" />
+      <rect x={82} y={40} width={17} height={27} rx={7.5} fill="#7c3aed" />
+      <rect x={13} y={44} width={5} height={19} rx={2.5} fill="#c4b5fd" />
+      <rect x={82} y={44} width={5} height={19} rx={2.5} fill="#c4b5fd" />
+    </g>
+  )
+}
+
+/** An eighth note, floating up while Boo listens. Placed by the outer group, animated inside. */
+export function MusicNote({ x, y, size = 1, className }: { x: number; y: number; size?: number; className: string }): JSX.Element {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${size})`}>
+      <g className={`music-note ${className}`} fill="#c4b5fd">
+        <ellipse cx={5} cy={20} rx={6} ry={4.6} transform="rotate(-20 5 20)" />
+        <rect x={9} y={0} width={2.6} height={20} rx={1.3} />
+        <path d="M11.6,0 Q20,4 18,13 Q16,7 11.6,6.5 Z" />
+      </g>
+    </g>
+  )
+}
+
 /** Boo itself. Arms are small rounded nubs on each side; a soft halo sits behind. */
 export function Boo({
   expression,
   arms,
   className = '',
   look,
-  halo = true
+  halo = true,
+  headphones = false
 }: {
   expression: Expression
   arms: Arms
   className?: string
   look?: Look
   halo?: boolean
+  headphones?: boolean
 }): JSX.Element {
   const id = useContext(DrawingId)
   const fill = `url(#${id}-fill)`
@@ -98,6 +126,7 @@ export function Boo({
       <ellipse cx={25} cy={60} rx={5.5} ry={3} fill="#fb7185" opacity={0.85} />
       <ellipse cx={75} cy={60} rx={5.5} ry={3} fill="#fb7185" opacity={0.85} />
       <Mouth expression={expression} />
+      {headphones && <Headphones />}
     </g>
   )
 }
@@ -212,6 +241,16 @@ const SCENES: Record<FullScene, { width: number; draw: () => JSX.Element }> = {
       <>
         <Boo expression="sleepy" arms="rest" className="doze" />
         <Zs />
+      </>
+    )
+  },
+  music: {
+    width: 132,
+    draw: () => (
+      <>
+        <Boo expression="happy" arms="rest" className="bob" headphones />
+        <MusicNote x={104} y={30} className="note-1" />
+        <MusicNote x={112} y={56} size={0.75} className="note-2" />
       </>
     )
   }

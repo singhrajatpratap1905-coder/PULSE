@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Boo, Defs, DrawingId, type Look } from './Scene'
+import { Boo, Defs, DrawingId, MusicNote, type Look } from './Scene'
 
 // Boo in the tiny notch. Deliberately still: no looping animations, because every frame of
 // Pulse's transparent always-on-top window costs CPU. It only moves when something happens:
-// the pointer comes near (eyes follow, sometimes a wave) or you copy something (catches a paper).
+// the pointer comes near (eyes follow, sometimes a wave), you copy something (catches a paper),
+// or music plays (headphones on, bobbing along: the one ongoing animation, and only then).
 
 // The pointer counts as "near" within this distance of the notch, in CSS pixels.
 const NEAR_PX = 260
@@ -11,6 +12,9 @@ const WAVE_MS = 1400
 const WAVE_COOLDOWN_MS = 25_000
 // Forget where the pointer was after this long without movement (it may have left the area).
 const LOOK_TIMEOUT_MS = 2500
+// While music plays, Boo sways between two poses on this beat. Two poses, not a smooth CSS
+// animation: Pulse draws without the GPU, and smooth motion here cost ~19% of a core; this ~4%.
+const BEAT_MS = 550
 
 /** Eye offset toward the pointer, in a few coarse steps so small moves don't redraw. */
 function lookToward(dx: number, dy: number): Look {
@@ -18,10 +22,19 @@ function lookToward(dx: number, dy: number): Look {
   return { x: Math.round(clamp(dx / 140) * 3), y: Math.round(clamp(dy / 90) * 2) }
 }
 
-export function MiniBoo({ catching = false, height = 34 }: { catching?: boolean; height?: number }): JSX.Element {
+export function MiniBoo({
+  catching = false,
+  vibing = false,
+  height = 34
+}: {
+  catching?: boolean
+  vibing?: boolean
+  height?: number
+}): JSX.Element {
   const id = `mini${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const [look, setLook] = useState<Look | null>(null)
   const [waving, setWaving] = useState(false)
+  const [beat, setBeat] = useState(false)
   const near = useRef(false)
   const lastWave = useRef(0)
 
@@ -73,6 +86,12 @@ export function MiniBoo({ catching = false, height = 34 }: { catching?: boolean;
     }
   }, [catching])
 
+  useEffect(() => {
+    if (!vibing) return
+    const timer = setInterval(() => setBeat((b) => !b), BEAT_MS)
+    return () => clearInterval(timer)
+  }, [vibing])
+
   // Boo spans x 0–100, y 0–110; extra room for a raised arm and a falling paper.
   const view = { x: -10, y: -14, w: 120, h: 126 }
   return (
@@ -85,12 +104,21 @@ export function MiniBoo({ catching = false, height = 34 }: { catching?: boolean;
     >
       <DrawingId.Provider value={id}>
         <Defs id={id} />
-        <Boo
-          expression={catching ? 'happy' : 'open'}
-          arms={waving ? 'wave' : catching ? 'hold' : 'rest'}
-          look={look ?? undefined}
-          halo={false}
-        />
+        <g transform={vibing ? (beat ? 'translate(0 2) rotate(4 50 100)' : 'rotate(-4 50 100)') : undefined}>
+          <Boo
+            // Eyes closed, enjoying the song, unless the pointer comes by.
+            expression={catching || (vibing && !look) ? 'happy' : 'open'}
+            arms={waving ? 'wave' : catching ? 'hold' : 'rest'}
+            look={look ?? undefined}
+            halo={false}
+            headphones={vibing}
+          />
+        </g>
+        {vibing && !catching && (
+          <g opacity={beat ? 1 : 0.55}>
+            <MusicNote x={beat ? 92 : 97} y={beat ? 4 : -4} size={0.9} className="note-still" />
+          </g>
+        )}
         {catching && <Paper />}
       </DrawingId.Provider>
     </svg>

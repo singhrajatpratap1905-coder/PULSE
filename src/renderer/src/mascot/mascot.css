@@ -7,6 +7,7 @@
 .scene-art .sparkle,
 .scene-art .z,
 .scene-art .steam,
+.scene-art .music-note,
 .mini-boo .boo-arm,
 .mini-boo .paper {
   transform-box: fill-box;
@@ -31,6 +32,12 @@
 
 .mini-boo .boo-arm-left.arms-hold {
   transform: translate(10px, -6px);
+}
+
+/* Its music note steps with the beat in MiniBoo instead of floating. */
+.mini-boo .music-note {
+  opacity: 1;
+  animation: none;
 }
 
 .mini-boo .paper {
@@ -77,6 +84,32 @@
   0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
   45% { transform: translateY(-13px) scale(0.97, 1.03); }
   60% { transform: translateY(-13px) scale(0.97, 1.03); }
+}
+
+/* Listening to music: a gentle side-to-side bob, about one beat a second. */
+.boo.bob {
+  transform-origin: 50% 90%;
+  animation: boo-bob 1.1s ease-in-out infinite;
+}
+
+@keyframes boo-bob {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(3px) rotate(4deg); }
+}
+
+.music-note {
+  opacity: 0;
+  animation: note-float 2.4s ease-out infinite;
+}
+
+.note-2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes note-float {
+  0% { opacity: 0; transform: translate(0, 8px) rotate(-10deg); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(8px, -20px) rotate(14deg); }
 }
 
 /* ---------- Blinking ---------- */
@@ -206,7 +239,8 @@
 
 /* Respect "reduce motion": Boo stays still. */
 @media (prefers-reduced-motion: reduce) {
-  .scene-art * {
+  .scene-art *,
+  .mini-boo * {
     animation: none !important;
   }
 }

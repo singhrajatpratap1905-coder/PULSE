@@ -20,6 +20,8 @@ interface PulseState {
   fileDragOver: boolean
   /** Boo the mascot's settings, from the mascot service. */
   mascot: MascotPrefs | null
+  /** Music is playing: Boo wears headphones and bobs along. */
+  vibing: boolean
   open: (source: OpenSource) => void
   /** Turn a hover peek into a panel that stays open (after a click inside it). */
   pin: () => void
@@ -41,6 +43,7 @@ export const usePulse = create<PulseState>((set, get) => ({
   activity: null,
   queue: [],
   mascot: null,
+  vibing: false,
   dragging: false,
   fileDragOver: false,
   open: (source) => {

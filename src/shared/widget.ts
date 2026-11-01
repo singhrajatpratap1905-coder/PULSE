@@ -41,8 +41,15 @@ export interface ActivityInput {
 }
 
 /** `catch` plays inside Boo's tiny notch (a copied item drifting into Boo's hands). */
-export type MascotScene = 'wave' | 'typing' | 'coffee' | 'celebrate' | 'sleepy' | 'catch'
-export type MascotMoment = 'greetings' | 'focus' | 'celebrations' | 'bedtime'
+export type MascotScene = 'wave' | 'typing' | 'coffee' | 'celebrate' | 'sleepy' | 'catch' | 'music'
+export type MascotMoment = 'greetings' | 'focus' | 'celebrations' | 'bedtime' | 'music'
+
+/** What Windows' media controls say is playing. */
+export interface NowPlaying {
+  playing: boolean
+  title: string
+  artist: string
+}
 
 export interface MascotPrefs {
   enabled: boolean
