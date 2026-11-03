@@ -1,9 +1,13 @@
 import koffi from 'koffi'
 import type { NowPlaying } from '@shared/widget'
+import { browserTabTitles, type BrowserKind } from './tabs'
 
 // What's playing, from Windows' media controls (the panel that appears with the volume keys).
 // Spotify, browsers, and most music apps report there. It's a WinRT API, called here through
 // its COM vtables with koffi, so Pulse needs no native module.
+//
+// Only music counts, for now from Spotify and YouTube Music: a YouTube video or a call shouldn't
+// set Boo dancing.
 
 const MANAGER_CLASS = 'Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager'
 const IID_MANAGER_STATICS = '2050C4EE-11A0-57DE-AED7-C97C70338245'
@@ -13,7 +17,10 @@ const IID_ASYNC_INFO = '00000036-0000-0000-C000-000000000046'
 const QUERY_INTERFACE = 0
 const RELEASE = 2
 const STATICS_REQUEST_ASYNC = 6
-const MANAGER_CURRENT_SESSION = 6
+const MANAGER_SESSIONS = 7
+const VECTOR_GET_AT = 6
+const VECTOR_SIZE = 7
+const SESSION_APP_ID = 6
 const SESSION_MEDIA_PROPERTIES_ASYNC = 7
 const SESSION_PLAYBACK_INFO = 9
 const PLAYBACK_INFO_STATUS = 7
@@ -28,6 +35,19 @@ const ASYNC_COMPLETED = 1
 const ASYNC_POLL_MS = 25
 const ASYNC_TIMEOUT_MS = 2000
 
+// Music apps, by their app id in Windows' media controls (the Store and desktop Spotify, and the
+// installed YouTube Music web app).
+const MUSIC_APPS = /spotify|cinhimbnkkaeohfgghhklpknlkffjgod/i
+const BROWSERS: Array<[RegExp, BrowserKind]> = [
+  [/firefox/i, 'firefox'],
+  [/chrome|msedge|brave|opera|vivaldi/i, 'chromium']
+]
+// A browser's media is YouTube Music when a tab is titled "<song> | YouTube Music".
+const YOUTUBE_MUSIC_TAB = '| YouTube Music'
+// Reading tab titles takes ~50 ms, so the answer is kept per song. A "no" is rechecked after a
+// while: the tab's title can lag behind the media controls when a song starts.
+const NOT_MUSIC_RECHECK_MS = 10_000
+
 type Ptr = unknown
 
 interface Bindings {
@@ -37,6 +57,7 @@ interface Bindings {
   rawBuffer: (s: Ptr, len: number[]) => Ptr
   outPtr: koffi.IKoffiCType
   outInt: koffi.IKoffiCType
+  getAt: koffi.IKoffiCType
   queryInterface: koffi.IKoffiCType
   release: koffi.IKoffiCType
 }
@@ -55,6 +76,7 @@ function bindings(): Bindings | null {
       rawBuffer: combase.func('void* __stdcall WindowsGetStringRawBuffer(void* s, _Out_ uint32* len)'),
       outPtr: koffi.proto('long __stdcall MediaOutPtr(void* self, _Out_ void** out)'),
       outInt: koffi.proto('long __stdcall MediaOutInt(void* self, _Out_ int* out)'),
+      getAt: koffi.proto('long __stdcall MediaGetAt(void* self, uint32 index, _Out_ void** out)'),
       queryInterface: koffi.proto('long __stdcall MediaQueryInterface(void* self, void* iid, _Out_ void** out)'),
       release: koffi.proto('uint32 __stdcall MediaRelease(void* self)')
     }
@@ -143,37 +165,69 @@ async function sessionManager(l: Bindings): Promise<Ptr> {
   }
 }
 
+const browserVerdicts = new Map<string, { music: boolean; at: number }>()
+
+/** Whether a browser's media with this title is coming from a YouTube Music tab. */
+function isYouTubeMusicTab(kind: BrowserKind, title: string): boolean {
+  const key = `${kind}\n${title}`
+  const known = browserVerdicts.get(key)
+  if (known && (known.music || Date.now() - known.at < NOT_MUSIC_RECHECK_MS)) return known.music
+  const music = browserTabTitles(kind).some((tab) => tab.includes(YOUTUBE_MUSIC_TAB) && tab.includes(title))
+  // Keep only the latest few songs.
+  if (browserVerdicts.size > 20) browserVerdicts.clear()
+  browserVerdicts.set(key, { music, at: Date.now() })
+  return music
+}
+
+async function readSession(l: Bindings, session: Ptr): Promise<NowPlaying | null> {
+  const app = takeString(l, getPtr(l, session, SESSION_APP_ID))
+  const browser = BROWSERS.find(([pattern]) => pattern.test(app))?.[1]
+  if (!browser && !MUSIC_APPS.test(app)) return null
+  const info = getPtr(l, session, SESSION_PLAYBACK_INFO)
+  try {
+    if (getInt(l, info, PLAYBACK_INFO_STATUS) !== PLAYBACK_PLAYING) return null
+  } finally {
+    release(l, info)
+  }
+  const props = await settle(l, getPtr(l, session, SESSION_MEDIA_PROPERTIES_ASYNC))
+  let song: NowPlaying
+  try {
+    song = {
+      playing: true,
+      title: takeString(l, getPtr(l, props, PROPERTIES_TITLE)),
+      artist: takeString(l, getPtr(l, props, PROPERTIES_ARTIST))
+    }
+  } finally {
+    release(l, props)
+  }
+  if (browser && !(song.title && isYouTubeMusicTab(browser, song.title))) return null
+  return song
+}
+
 /**
- * Whether the app Windows considers "current" for media is playing, and if so the song. null when
- * nothing has a media session or the API isn't available.
+ * The music playing in Spotify or YouTube Music, if any. Looks at every app with media, not just
+ * the one Windows shows, so a paused video elsewhere doesn't hide a playing song. null when no
+ * music plays or the API isn't available.
  */
 export async function nowPlaying(): Promise<NowPlaying | null> {
   const l = bindings()
   if (!l) return null
   const mgr = await sessionManager(l)
-  const session = getPtr(l, mgr, MANAGER_CURRENT_SESSION)
-  if (!session) return null
+  const sessions = getPtr(l, mgr, MANAGER_SESSIONS)
   try {
-    const info = getPtr(l, session, SESSION_PLAYBACK_INFO)
-    let playing = false
-    try {
-      playing = getInt(l, info, PLAYBACK_INFO_STATUS) === PLAYBACK_PLAYING
-    } finally {
-      release(l, info)
-    }
-    // The title takes an async round trip; only worth it while something plays.
-    if (!playing) return { playing, title: '', artist: '' }
-    const props = await settle(l, getPtr(l, session, SESSION_MEDIA_PROPERTIES_ASYNC))
-    try {
-      return {
-        playing,
-        title: takeString(l, getPtr(l, props, PROPERTIES_TITLE)),
-        artist: takeString(l, getPtr(l, props, PROPERTIES_ARTIST))
+    const count = getInt(l, sessions, VECTOR_SIZE)
+    for (let i = 0; i < count; i++) {
+      const out: Ptr[] = [null]
+      if (koffi.call(method(sessions, VECTOR_GET_AT), l.getAt, sessions, i, out) < 0 || !out[0]) continue
+      try {
+        const song = await readSession(l, out[0])
+        if (song) return song
+      } finally {
+        release(l, out[0])
       }
-    } finally {
-      release(l, props)
     }
+    return null
   } finally {
-    release(l, session)
+    release(l, sessions)
   }
 }
